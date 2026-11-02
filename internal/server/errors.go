@@ -1,4 +1,4 @@
-package main
+package server
 
 // Rejection reasons: code -> plain-language explanation, per language.
 // The portal returns cryptic codes; we map each to why it failed and how to fix it.

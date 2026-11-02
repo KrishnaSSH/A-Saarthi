@@ -1,12 +1,10 @@
-package main
+package server
 
 import (
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
-	"os"
 	"strconv"
 )
 
@@ -30,7 +28,8 @@ func lang(r *http.Request) string {
 	return "en"
 }
 
-func main() {
+// New returns the API handler. Static files are served separately (Vercel CDN or cmd/server).
+func New() *http.ServeMux {
 	abdm := newABDM()
 	mux := http.NewServeMux()
 
@@ -99,15 +98,5 @@ func main() {
 		w.Write(body)
 	})
 
-	// Serve the built frontend if present.
-	if _, err := os.Stat("../frontend/dist"); err == nil {
-		mux.Handle("/", http.FileServer(http.Dir("../frontend/dist")))
-	}
-
-	addr := ":8080"
-	if p := os.Getenv("PORT"); p != "" {
-		addr = ":" + p
-	}
-	log.Println("listening on", addr)
-	log.Fatal(http.ListenAndServe(addr, mux))
+	return mux
 }
