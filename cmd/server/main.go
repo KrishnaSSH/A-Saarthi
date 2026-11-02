@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/KrishnaSSH/a-saarthi/internal/server"
+	"github.com/KrishnaSSH/a-saarthi/server"
 )
 
 func main() {

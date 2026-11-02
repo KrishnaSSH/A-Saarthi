@@ -3,7 +3,7 @@ package handler
 import (
 	"net/http"
 
-	"github.com/KrishnaSSH/a-saarthi/internal/server"
+	"github.com/KrishnaSSH/a-saarthi/server"
 )
 
 var mux = server.New()

@@ -1,20 +1,24 @@
 :root {
-  --bg: #fff7ec;
-  --ink: #2a1f4d;
-  --violet: #6741d9;
-  --lav: #efeaff;
-  --sun: #ffb627;
-  --coral: #ff6b5b;
-  --leaf: #2fb36d;
-  --mute: #6d6490;
+  --navy: #0b3c6f;
+  --blue: #0b5fa5;
+  --saffron: #ff9933;
+  --green: #138808;
+  --ink: #1a1a1a;
+  --mute: #555;
+  --line: #c9d1da;
+  --pale: #eef3f8;
+  --warn: #fff4d6;
+  --err: #b3261e;
 }
 * { box-sizing: border-box; margin: 0; }
-html { font-size: 18px; }
+html { font-size: 16px; }
+html.t-lg { font-size: 18px; }
+html.t-xl { font-size: 20px; }
+html.t-sm { font-size: 14px; }
 body {
-  font-family: ui-rounded, 'Nunito', 'Segoe UI', 'Noto Sans', 'Noto Sans Devanagari', 'Noto Sans Bengali', 'Noto Sans Tamil', 'Noto Sans Telugu', system-ui, sans-serif;
-  background: var(--bg); color: var(--ink); line-height: 1.5;
-  background-image: radial-gradient(var(--lav) 2px, transparent 2px); background-size: 28px 28px;
+  font-family: 'Noto Sans', 'Noto Sans Devanagari', 'Noto Sans Bengali', 'Noto Sans Tamil', 'Noto Sans Telugu', Arial, Helvetica, sans-serif;
+  background: #fff; color: var(--ink); line-height: 1.6;
 }
 button, input, select { font: inherit; color: inherit; }
-:focus-visible { outline: 4px solid var(--sun); outline-offset: 2px; }
-@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+a { color: var(--blue); }
+:focus-visible { outline: 3px solid var(--saffron); outline-offset: 2px; }

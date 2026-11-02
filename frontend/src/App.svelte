@@ -1,6 +1,5 @@
 <script>
   import { lang, languages, t } from './lib/i18n.js';
-  import Mascot from './lib/Mascot.svelte';
 
   let step = $state(1);
   let form = $state({
@@ -11,11 +10,13 @@
   let locError = $state('');
   let result = $state(null);
   let reasons = $state([]);
+  let size = $state('');
 
-  const mood = $derived(detecting ? 'think' : result ? (result.ok ? 'happy' : 'oops') : 'hi');
-  const speech = $derived(
-    detecting ? $t('say_det') : result ? (result.ok ? $t('say_ok') : $t('say_bad')) : $t('say_s' + step)
-  );
+  try { size = localStorage.getItem('size') || ''; } catch {}
+  $effect(() => {
+    document.documentElement.className = size;
+    try { localStorage.setItem('size', size); } catch {}
+  });
 
   async function detect() {
     locError = '';
@@ -50,42 +51,71 @@
   $effect(() => { loadReasons($lang); });
 </script>
 
-<a class="skip" href="#main">{$t('skip')}</a>
+<div class="flag" aria-hidden="true"><i></i><i></i><i></i></div>
 
-<div class="page">
-  <header>
-    <span class="logo">{$t('title')}</span>
-    <label class="lang">
-      <span class="sr">Language</span>
-      <select bind:value={$lang}>
-        {#each Object.entries(languages) as [code, name]}<option value={code}>{name}</option>{/each}
-      </select>
-    </label>
-  </header>
+<div class="util">
+  <div class="wrap">
+    <a class="skip" href="#main">{$t('skip')}</a>
+    <div class="tools">
+      <span class="sizes" role="group" aria-label={$t('textSize')}>
+        <button onclick={() => (size = 't-sm')} aria-label="A-" class:on={size === 't-sm'}>A-</button>
+        <button onclick={() => (size = '')} aria-label="A" class:on={size === ''}>A</button>
+        <button onclick={() => (size = 't-lg')} aria-label="A+" class:on={size === 't-lg'}>A+</button>
+        <button onclick={() => (size = 't-xl')} aria-label="A++" class:on={size === 't-xl'}>A++</button>
+      </span>
+      <label>
+        <span class="sr">Language</span>
+        <select bind:value={$lang}>
+          {#each Object.entries(languages) as [code, name]}<option value={code}>{name}</option>{/each}
+        </select>
+      </label>
+    </div>
+  </div>
+</div>
 
-  <section class="hero">
-    <div class="mascot"><Mascot {mood} /></div>
-    <p class="bubble" aria-live="polite">{speech}</p>
-  </section>
+<header class="brand">
+  <div class="wrap">
+    <img src="/favicon.svg" alt="" width="56" height="56" />
+    <div>
+      <div class="name">{$t('title')}</div>
+      <div class="tag">{$t('sub')}</div>
+    </div>
+  </div>
+</header>
 
-  <main id="main">
-    <div class="card">
-      <ol class="dots" aria-label="Progress">
+<nav aria-label="Main">
+  <div class="wrap">
+    <a href="#main" class="cur">{$t('navApply')}</a>
+    <a href="#reasons">{$t('navReasons')}</a>
+  </div>
+</nav>
+
+<div class="notice"><div class="wrap">ⓘ {$t('disclaimer')}</div></div>
+
+<main id="main" class="wrap">
+  <h1>{$t('pageTitle')}</h1>
+
+  <div class="layout">
+    <section class="panel" aria-labelledby="stepTitle">
+      <ol class="steps" aria-label="Progress">
         {#each [1, 2, 3] as n}
-          <li class:on={step === n} class:done={step > n}>
-            <span>{step > n ? '✓' : n}</span><em>{$t('step' + n)}</em>
+          <li class:on={step === n} class:done={step > n} aria-current={step === n ? 'step' : undefined}>
+            <span>{step > n ? '✓' : n}</span>{$t('step' + n)}
           </li>
         {/each}
       </ol>
+
+      <h2 id="stepTitle">{$t('step' + step)}</h2>
+      <p class="help">{$t('h' + step)}</p>
 
       <form onsubmit={(e) => e.preventDefault()}>
         {#if step === 1}
           <label>{$t('name')}<input bind:value={form.name} autocomplete="name" /></label>
           <label>{$t('dob')}<input bind:value={form.dob} inputmode="numeric" placeholder="01-01-1990" /></label>
           <label>{$t('mobile')}<input bind:value={form.mobile} inputmode="tel" maxlength="10" autocomplete="tel-national" /></label>
-          <div class="row end"><button class="primary" onclick={() => go(2)}>{$t('next')} →</button></div>
+          <div class="row end"><button class="btn primary" onclick={() => go(2)}>{$t('next')} »</button></div>
         {:else if step === 2}
-          <button class="detect" onclick={detect} disabled={detecting}>📍 {detecting ? $t('detecting') : $t('detect')}</button>
+          <button class="btn detect" onclick={detect} disabled={detecting}>{detecting ? $t('detecting') : $t('detect')}</button>
           <p class="hint">{$t('detectHint')}</p>
           {#if locError}<p class="err" role="alert">{locError}</p>{/if}
           <div class="two">
@@ -95,8 +125,8 @@
             <label>{$t('pincode')}<input bind:value={form.pincode} inputmode="numeric" maxlength="6" /></label>
           </div>
           <div class="row">
-            <button onclick={() => go(1)}>← {$t('back')}</button>
-            <button class="primary" onclick={() => go(3)}>{$t('next')} →</button>
+            <button class="btn" onclick={() => go(1)}>« {$t('back')}</button>
+            <button class="btn primary" onclick={() => go(3)}>{$t('next')} »</button>
           </div>
         {:else}
           <dl>
@@ -106,20 +136,20 @@
             <dt>{$t('step2')}</dt><dd>{[form.address.village, form.address.district, form.address.state, form.pincode].filter(Boolean).join(', ') || '—'}</dd>
           </dl>
           <div class="row">
-            <button onclick={() => go(2)}>← {$t('back')}</button>
-            <button class="primary" onclick={submit}>{$t('submit')}</button>
+            <button class="btn" onclick={() => go(2)}>« {$t('back')}</button>
+            <button class="btn primary" onclick={submit}>{$t('submit')}</button>
           </div>
           {#if result}
             <div role="status" class="result">
               {#if result.ok}
-                <p class="ok">🎉 {$t('allGood')}</p>
+                <p class="ok">✓ {$t('allGood')}</p>
               {:else}
                 <h3>{$t('problems')}</h3>
                 {#each result.issues as i}
                   <article>
                     <h4>{i.title} <code>{i.code}</code></h4>
-                    <p><b>{$t('why')}</b> {i.why}</p>
-                    <p><b>{$t('fix')}</b> {i.fix}</p>
+                    <p><b>{$t('why')}:</b> {i.why}</p>
+                    <p><b>{$t('fix')}:</b> {i.fix}</p>
                   </article>
                 {/each}
               {/if}
@@ -127,106 +157,118 @@
           {/if}
         {/if}
       </form>
-    </div>
-
-    <section class="ref">
-      <h2>{$t('reasons')}</h2>
-      <p class="sub">{$t('reasonsSub')}</p>
-      <div class="cards">
-        {#each reasons as r}
-          <article>
-            <code>{r.code}</code>
-            <h3>{r.title}</h3>
-            <p>{r.why}</p>
-            <p class="fix">✔ {r.fix}</p>
-          </article>
-        {/each}
-      </div>
     </section>
-  </main>
-</div>
+
+    <aside>
+      <h2>{$t('helpline')}</h2>
+      <p class="big">14555</p>
+    </aside>
+  </div>
+
+  <section id="reasons" class="reasons">
+    <h2>{$t('reasons')}</h2>
+    <p class="help">{$t('reasonsSub')}</p>
+    <div class="scroll">
+      <table>
+        <thead><tr><th scope="col">{$t('colCode')}</th><th scope="col">{$t('colReason')}</th><th scope="col">{$t('fix')}</th></tr></thead>
+        <tbody>
+          {#each reasons as r}
+            <tr><td><code>{r.code}</code></td><td><b>{r.title}</b><br />{r.why}</td><td>{r.fix}</td></tr>
+          {/each}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<footer><div class="wrap">{$t('disclaimer')}</div></footer>
 
 <style>
-  .skip { position: absolute; left: -999px; }
-  .skip:focus { left: 8px; top: 8px; background: #fff; padding: 8px; z-index: 9; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
   .sr { position: absolute; left: -999px; }
-  .page { max-width: 880px; margin: 0 auto; padding: 0 20px 80px; }
+  .flag { display: flex; height: 6px; } .flag i { flex: 1; } .flag i:nth-child(1) { background: var(--saffron); } .flag i:nth-child(2) { background: #fff; box-shadow: inset 0 1px #ddd, inset 0 -1px #ddd; } .flag i:nth-child(3) { background: var(--green); }
 
-  header { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; }
-  .logo { font-size: 1.6rem; font-weight: 900; color: var(--violet); letter-spacing: -.01em; }
-  select { border: 2.5px solid var(--ink); background: #fff; padding: 6px 12px; border-radius: 999px; font-weight: 700; }
+  .util { background: #f1f3f5; border-bottom: 1px solid var(--line); font-size: .8rem; }
+  .util .wrap { display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 40px; flex-wrap: wrap; }
+  .skip { color: var(--ink); }
+  .tools { display: flex; align-items: center; gap: 12px; }
+  .sizes { display: flex; }
+  .sizes button { border: 1px solid var(--line); background: #fff; padding: 2px 8px; cursor: pointer; margin-left: -1px; min-width: 36px; }
+  .sizes button.on { background: var(--navy); color: #fff; border-color: var(--navy); }
+  select { border: 1px solid #888; background: #fff; padding: 3px 6px; }
 
-  .hero { display: flex; align-items: center; gap: 20px; margin: 8px 0 28px; }
-  .mascot { width: clamp(96px, 22vw, 160px); flex: none; }
-  .bubble {
-    position: relative; background: #fff; border: 2.5px solid var(--ink); border-radius: 22px;
-    padding: 16px 20px; font-size: clamp(1.1rem, 3.2vw, 1.5rem); font-weight: 800; line-height: 1.3;
-    box-shadow: 5px 5px 0 var(--sun);
-  }
-  .bubble::before {
-    content: ''; position: absolute; left: -12px; top: 50%; width: 20px; height: 20px; background: #fff;
-    border-left: 2.5px solid var(--ink); border-bottom: 2.5px solid var(--ink); transform: translateY(-50%) rotate(45deg);
-  }
+  .brand { border-bottom: 1px solid var(--line); }
+  .brand .wrap { display: flex; align-items: center; gap: 16px; padding-top: 14px; padding-bottom: 14px; }
+  .name { font-size: 1.8rem; font-weight: 700; color: var(--navy); line-height: 1.1; }
+  .tag { color: var(--mute); font-size: .95rem; }
 
-  .card, .ref article { background: #fff; border: 2.5px solid var(--ink); border-radius: 24px; box-shadow: 6px 6px 0 var(--violet); }
-  .card { padding: 24px; }
+  nav { background: var(--navy); }
+  nav .wrap { display: flex; gap: 0; flex-wrap: wrap; }
+  nav a { color: #fff; text-decoration: none; padding: 12px 20px; font-weight: 600; border-right: 1px solid rgba(255,255,255,.2); }
+  nav a:hover, nav a.cur { background: var(--blue); }
 
-  .dots { list-style: none; padding: 0; display: flex; gap: 8px; margin-bottom: 24px; }
-  .dots li { flex: 1; display: flex; align-items: center; gap: 8px; color: var(--mute); font-weight: 700; font-size: .8rem; }
-  .dots span { width: 30px; height: 30px; border-radius: 50%; border: 2.5px solid currentColor; display: grid; place-items: center; flex: none; }
-  .dots li.on { color: var(--ink); }
-  .dots li.on span { background: var(--sun); border-color: var(--ink); }
-  .dots li.done { color: var(--leaf); }
-  .dots li.done span { background: var(--leaf); border-color: var(--leaf); color: #fff; }
-  .dots em { font-style: normal; }
+  .notice { background: var(--warn); border-bottom: 1px solid #e6cf8b; font-size: .85rem; }
+  .notice .wrap { padding-top: 8px; padding-bottom: 8px; }
 
-  form { display: grid; gap: 20px; }
-  label { display: grid; gap: 6px; font-weight: 800; font-size: .9rem; }
-  input {
-    border: 2.5px solid var(--ink); border-radius: 14px; padding: 12px 14px; background: var(--bg); font-size: 1.1rem; font-weight: 600;
-  }
-  input:focus { outline: none; border-color: var(--violet); box-shadow: 0 0 0 4px var(--lav); background: #fff; }
+  main { padding-top: 24px; padding-bottom: 56px; }
+  h1 { font-size: 1.6rem; color: var(--navy); border-bottom: 3px solid var(--saffron); display: inline-block; padding-bottom: 4px; margin-bottom: 20px; }
+  h2 { font-size: 1.2rem; color: var(--navy); }
+  .help { color: var(--mute); margin: 2px 0 16px; }
+
+  .layout { display: grid; grid-template-columns: 1fr 260px; gap: 24px; align-items: start; }
+  .panel { border: 1px solid var(--line); border-top: 4px solid var(--navy); padding: 20px 24px 24px; background: #fff; }
+  aside { background: var(--pale); border: 1px solid var(--line); padding: 16px 20px; }
+  .big { font-size: 2.2rem; font-weight: 700; color: var(--navy); }
+
+  .steps { list-style: none; padding: 0; display: flex; gap: 0; margin-bottom: 20px; border: 1px solid var(--line); }
+  .steps li { flex: 1; padding: 8px 12px; display: flex; gap: 8px; align-items: center; font-size: .85rem; color: var(--mute); background: var(--pale); border-right: 1px solid var(--line); }
+  .steps li:last-child { border-right: 0; }
+  .steps span { width: 24px; height: 24px; border-radius: 50%; border: 1px solid currentColor; display: grid; place-items: center; flex: none; font-size: .8rem; }
+  .steps li.on { background: var(--navy); color: #fff; font-weight: 600; }
+  .steps li.done { color: var(--green); font-weight: 600; }
+
+  form { display: grid; gap: 16px; }
+  label { display: grid; gap: 4px; font-weight: 600; font-size: .9rem; }
+  input { border: 1px solid #777; padding: 9px 10px; background: #fff; font-size: 1rem; border-radius: 2px; }
+  input:focus { outline: 3px solid var(--saffron); border-color: var(--navy); }
   .two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-
-  button {
-    border: 2.5px solid var(--ink); background: #fff; padding: 12px 22px; font-weight: 800; cursor: pointer;
-    border-radius: 999px; min-height: 48px; box-shadow: 3px 3px 0 var(--ink); transition: transform .08s, box-shadow .08s;
-  }
-  button:hover:not(:disabled) { transform: translate(-1px, -1px); box-shadow: 5px 5px 0 var(--ink); }
-  button:active:not(:disabled) { transform: translate(3px, 3px); box-shadow: 0 0 0 var(--ink); }
-  button.primary { background: var(--violet); color: #fff; }
-  button.detect { background: var(--sun); width: 100%; font-size: 1.1rem; }
-  button:disabled { opacity: .6; cursor: wait; }
   .row { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
   .row.end { justify-content: flex-end; }
-  .hint { color: var(--mute); margin-top: -8px; font-size: .9rem; }
-  .err { color: #c0301f; font-weight: 700; }
 
-  dl { display: grid; grid-template-columns: 1fr 2fr; gap: 10px 20px; }
-  dt { color: var(--mute); font-size: .85rem; } dd { font-weight: 800; }
+  .btn { border: 1px solid var(--navy); background: #fff; color: var(--navy); padding: 9px 22px; font-weight: 600; cursor: pointer; border-radius: 2px; min-height: 44px; }
+  .btn:hover:not(:disabled) { background: var(--pale); }
+  .btn.primary { background: var(--navy); color: #fff; }
+  .btn.primary:hover:not(:disabled) { background: var(--blue); }
+  .btn.detect { background: var(--saffron); border-color: #c46f00; color: #1a1a1a; width: 100%; }
+  .btn:disabled { opacity: .6; cursor: wait; }
+  .hint { color: var(--mute); font-size: .85rem; margin-top: -8px; }
+  .err { color: var(--err); font-weight: 600; }
 
-  .result { display: grid; gap: 14px; border-top: 3px dashed var(--lav); padding-top: 18px; }
-  .ok { font-size: 1.5rem; font-weight: 900; color: var(--leaf); }
-  .result article { background: #fff1ef; border: 2.5px solid var(--coral); border-radius: 16px; padding: 14px 16px; display: grid; gap: 4px; }
-  h4 { font-size: 1.05rem; }
-  code { font-family: ui-monospace, monospace; font-size: .7rem; background: var(--lav); color: var(--violet); padding: 2px 8px; border-radius: 999px; margin-left: 6px; }
+  dl { display: grid; grid-template-columns: 1fr 2fr; gap: 8px 20px; border: 1px solid var(--line); padding: 14px 16px; background: var(--pale); }
+  dt { color: var(--mute); font-size: .85rem; } dd { font-weight: 600; }
+  .result { display: grid; gap: 12px; border-top: 1px solid var(--line); padding-top: 16px; }
+  .ok { color: var(--green); font-weight: 700; font-size: 1.15rem; border: 1px solid var(--green); background: #eaf6e8; padding: 12px 16px; }
+  .result article { border: 1px solid #e3a8a3; border-left: 5px solid var(--err); background: #fdf1f0; padding: 10px 14px; }
+  h3 { font-size: 1.05rem; color: var(--err); }
+  h4 { font-size: 1rem; }
+  code { font-family: ui-monospace, Menlo, monospace; font-size: .75rem; background: var(--pale); border: 1px solid var(--line); padding: 1px 6px; margin-left: 4px; }
+  td code { margin: 0; }
 
-  .ref { margin-top: 64px; }
-  h2 { font-size: clamp(1.6rem, 5vw, 2.2rem); font-weight: 900; letter-spacing: -.01em; }
-  .sub { color: var(--mute); margin: 4px 0 24px; }
-  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 22px; }
-  .cards article { padding: 18px; display: grid; gap: 8px; align-content: start; box-shadow: 4px 4px 0 var(--ink); }
-  .cards article:nth-child(3n+1) { box-shadow: 4px 4px 0 var(--sun); }
-  .cards article:nth-child(3n+2) { box-shadow: 4px 4px 0 var(--coral); }
-  .cards article code { margin: 0; justify-self: start; }
-  .cards h3 { font-size: 1.05rem; line-height: 1.25; }
-  .cards p { font-size: .9rem; }
-  .fix { color: var(--leaf); font-weight: 700; }
+  .reasons { margin-top: 48px; }
+  .scroll { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: .9rem; }
+  th { background: var(--navy); color: #fff; text-align: left; padding: 10px 12px; }
+  td { padding: 10px 12px; vertical-align: top; border: 1px solid var(--line); }
+  tbody tr:nth-child(even) { background: var(--pale); }
 
-  @media (max-width: 600px) {
-    .hero { gap: 16px; }
-    .dots em { display: none; }
+  footer { background: var(--navy); color: #dbe6f2; font-size: .85rem; padding: 18px 0; }
+
+  @media (max-width: 760px) {
+    .layout { grid-template-columns: 1fr; }
     .two { grid-template-columns: 1fr; }
-    dl { grid-template-columns: 1fr; gap: 2px; } dd { margin-bottom: 10px; }
+    .steps { flex-direction: column; } .steps li { border-right: 0; border-bottom: 1px solid var(--line); }
+    dl { grid-template-columns: 1fr; gap: 2px; } dd { margin-bottom: 8px; }
+    .panel { padding: 16px; }
+    nav a { flex: 1; text-align: center; padding: 10px; }
   }
 </style>
